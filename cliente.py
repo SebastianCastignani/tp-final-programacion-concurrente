@@ -1,5 +1,6 @@
 import socket
 import threading
+import time
 
 def intentar_comprar(id_cliente):
 	try:
@@ -19,7 +20,17 @@ print("Iniciando venta masiva...")
 
 # Disparamos 10 hilos concurrentes para agotar las 5 entradas
 hilos_clientes = []
-for i in range(1, 11):
+for i in range(1, 50):
+	hilo = threading.Thread(target=intentar_comprar, args=(i,))
+	hilos_clientes.append(hilo)
+	hilo.start()
+time.sleep(1)
+for i in range(1, 50):
+	hilo = threading.Thread(target=intentar_comprar, args=(i,))
+	hilos_clientes.append(hilo)
+	hilo.start()
+time.sleep(1)
+for i in range(1, 50):
 	hilo = threading.Thread(target=intentar_comprar, args=(i,))
 	hilos_clientes.append(hilo)
 	hilo.start()
