@@ -1,9 +1,10 @@
 import socket
 import threading
 import time
+import queue
 
 # Variable global: Inventario de entradas
-entradas_disponibles = 100
+entradas_disponibles = 5
 
 # --- NUEVO REQUERIMIENTO A: Sistema de Actualización ---
 # Bandera booleana para pausar el servidor.
@@ -13,6 +14,15 @@ lockCompra = threading.Lock() #proteje la seccion critica en la compra de entrad
 limiteClientes = threading.Semaphore(3) # limita a 3 clientes a la vez
 actualizacionEvento = threading.Event() # avisa a los hilos que se está actualizando y se pausan.
 actualizacionEvento.set() # comienza liberado
+cola_mails = queue.Queue()
+
+
+def consumidor_mails():
+    while True:
+        direccion = cola_mails.get()
+        enviar_email_confirmacion(direccion)
+        cola_mails.task_done()
+
 
 def simular_actualizacion():
     """Hilo independiente que frena el servidor a los 5 segundos"""
@@ -30,11 +40,11 @@ def simular_actualizacion():
 
 # --- NUEVO REQUERIMIENTO B: Envío de Emails ---
 def enviar_email_confirmacion(direccion):
-    """Simula el tiempo de conexión a un servidor SMTP externo"""
     print(f" -> [Mail] Conectando al servidor para enviar ticket a {direccion}...")
-    # Retraso de red bloqueante
     time.sleep(2)
     print(f" -> [Mail] Email enviado con éxito a {direccion}.")
+
+
 
 def manejar_cliente(conexion, direccion):
     global entradas_disponibles
@@ -54,8 +64,7 @@ def manejar_cliente(conexion, direccion):
                         respuesta = f"Compra exitosa. Quedan {entradas_disponibles} entradas."
 
                         #el mail será manejado por otro hilo no bloqueante ya que no es crítico
-                        hilo_mail = threading.Thread(target=enviar_email_confirmacion, args=(direccion,))
-                        hilo_mail.start()
+                        cola_mails.put(direccion)
                     else:
                         respuesta = "Operación rechazada. Entradas agotadas."
 
@@ -67,6 +76,8 @@ def manejar_cliente(conexion, direccion):
     finally:
         conexion.close()
 
+
+
 def iniciar_servidor():
     servidor = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     servidor.bind(('0.0.0.0', 5555))
@@ -76,6 +87,8 @@ def iniciar_servidor():
     # Lanzamos el hilo que provocará la actualización
     hilo_update = threading.Thread(target=simular_actualizacion)
     hilo_update.start()
+    hilo_mails = threading.Thread(target=consumidor_mails, daemon=True)
+    hilo_mails.start()
 
     while True:
         conexion, direccion = servidor.accept()
