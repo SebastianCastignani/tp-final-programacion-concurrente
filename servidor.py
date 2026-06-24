@@ -4,7 +4,7 @@ import time
 import queue
 
 # Variable global: Inventario de entradas
-entradas_disponibles = 5
+entradas_disponibles = 90
 
 # --- NUEVO REQUERIMIENTO A: Sistema de Actualización ---
 # Bandera booleana para pausar el servidor.
@@ -82,7 +82,7 @@ def iniciar_servidor():
     servidor = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     servidor.bind(('0.0.0.0', 5555))
     servidor.listen()
-    print("[SERVIDOR] TicketFast iniciado. Entradas disponibles: 5")
+    print(f"[SERVIDOR] TicketFast iniciado. Entradas disponibles: {entradas_disponibles}")
 
     # Lanzamos el hilo que provocará la actualización
     hilo_update = threading.Thread(target=simular_actualizacion)
